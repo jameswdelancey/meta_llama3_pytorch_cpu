@@ -1,5 +1,5 @@
 # meta_llama3_pytorch_cpu
-Open the llama folder and try try_pt_llama3.ipynb. There are edits currently in the model.py and generate.py files there.
+Open the llama folder and try try_pt_llama3.ipynb. There are edits currently in the model.py and generate.py files there.  It's a little slower than my other repo jameswdelancey/llama3.c but it also works on Windows as well as the usuals (Mac/Linux). It would be nice to also see this transformer work reliabally on Tinygrad, but the current Llama model example included there runs into some bugs with Lazytensors, while PyTorch just works, albeit slower than a kernel compiled with -fopenmp.
 
 ```
 git clone https://github.com/jameswdelancey/meta_llama3_pytorch_cpu.git
