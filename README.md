@@ -1,6 +1,15 @@
 # meta_llama3_pytorch_cpu
 Open the llama folder and try try_pt_llama3.ipynb. There are edits currently in the model.py and generate.py files there.
 
+```
+git clone https://github.com/jameswdelancey/meta_llama3_pytorch_cpu.git
+cd meta_llama3_pytorch_cpu
+python -m pip install -e .
+```
+
+Then follow the code in the python notebook mentioned above.
+
+
 ---
 # Original README.md
 
