@@ -10,11 +10,11 @@ from typing import List, Optional, Tuple, TypedDict
 
 import torch
 import torch.nn.functional as F
-from fairscale.nn.model_parallel.initialize import (
-    get_model_parallel_rank,
-    initialize_model_parallel,
-    model_parallel_is_initialized,
-)
+# from fairscale.nn.model_parallel.initialize import (
+#     get_model_parallel_rank,
+#     initialize_model_parallel,
+#     model_parallel_is_initialized,
+# )
 
 from llama.model import ModelArgs, Transformer
 from llama.tokenizer import ChatFormat, Dialog, Message, Tokenizer
@@ -64,21 +64,21 @@ class Llama:
             This method initializes the distributed process group, sets the device to CUDA,
             and loads the pre-trained model and tokenizer.
         """
-        if not torch.distributed.is_initialized():
-            torch.distributed.init_process_group("nccl")
-        if not model_parallel_is_initialized():
-            if model_parallel_size is None:
-                model_parallel_size = int(os.environ.get("WORLD_SIZE", 1))
-            initialize_model_parallel(model_parallel_size)
+        # if not torch.distributed.is_initialized():
+        #     torch.distributed.init_process_group("nccl")
+        # if not model_parallel_is_initialized():
+        #     if model_parallel_size is None:
+        #         model_parallel_size = int(os.environ.get("WORLD_SIZE", 1))
+        #     initialize_model_parallel(model_parallel_size)
 
-        local_rank = int(os.environ.get("LOCAL_RANK", 0))
-        torch.cuda.set_device(local_rank)
+        # local_rank = int(os.environ.get("LOCAL_RANK", 0))
+        # torch.cuda.set_device(local_rank)
 
         # seed must be the same in all processes
         torch.manual_seed(seed)
 
-        if local_rank > 0:
-            sys.stdout = open(os.devnull, "w")
+        # if local_rank > 0:
+        #     sys.stdout = open(os.devnull, "w")
 
         start_time = time.time()
         checkpoints = sorted(Path(ckpt_dir).glob("*.pth"))
@@ -86,8 +86,11 @@ class Llama:
         assert model_parallel_size == len(
             checkpoints
         ), f"Loading a checkpoint for MP={len(checkpoints)} but world size is {model_parallel_size}"
-        ckpt_path = checkpoints[get_model_parallel_rank()]
-        checkpoint = torch.load(ckpt_path, map_location="cpu")
+        ckpt_path = checkpoints[0]
+        torch.set_default_tensor_type(torch.HalfTensor)
+        torch.set_default_device("cpu") # cpu, cuda, ipu, xpu, mkldnn, opengl, opencl, ideep, hip, ve, fpga, ort, xla, lazy, vulkan, mps, meta, hpu, mtia, privateuseone 
+        torch.set_num_threads(8)
+        checkpoint = torch.load(ckpt_path)#, map_location="cpu")
         with open(Path(ckpt_dir) / "params.json", "r") as f:
             params = json.loads(f.read())
 
@@ -98,10 +101,9 @@ class Llama:
         )
         tokenizer = Tokenizer(model_path=tokenizer_path)
         assert model_args.vocab_size == tokenizer.n_words
-        if torch.cuda.is_bf16_supported():
-            torch.set_default_tensor_type(torch.cuda.BFloat16Tensor)
-        else:
-            torch.set_default_tensor_type(torch.cuda.HalfTensor)
+        # if torch.cuda.is_bf16_supported():
+        #     torch.set_default_tensor_type(torch.cuda.BFloat16Tensor)
+        # else:
         model = Transformer(model_args)
         model.load_state_dict(checkpoint, strict=False)
         print(f"Loaded in {time.time() - start_time:.2f} seconds")
@@ -152,14 +154,14 @@ class Llama:
         total_len = min(params.max_seq_len, max_gen_len + max_prompt_len)
 
         pad_id = self.tokenizer.pad_id
-        tokens = torch.full((bsz, total_len), pad_id, dtype=torch.long, device="cuda")
+        tokens = torch.full((bsz, total_len), pad_id, dtype=torch.long)
         for k, t in enumerate(prompt_tokens):
-            tokens[k, : len(t)] = torch.tensor(t, dtype=torch.long, device="cuda")
+            tokens[k, : len(t)] = torch.tensor(t, dtype=torch.long)
         if logprobs:
             token_logprobs = torch.zeros_like(tokens, dtype=torch.float)
 
         prev_pos = 0
-        eos_reached = torch.tensor([False] * bsz, device="cuda")
+        eos_reached = torch.tensor([False] * bsz)
         input_text_mask = tokens != pad_id
         if min_prompt_len == total_len:
             logits = self.model.forward(tokens, prev_pos)
