@@ -1,3 +1,9 @@
+# meta_llama3_pytorch_cpu
+Open the llama folder and try try_pt_llama3.ipynb. There are edits currently in the model.py and generate.py files there.
+
+---
+# Original README.md
+
 <p align="center">
   <img src="https://github.com/meta-llama/llama3/blob/main/Llama3_Repo.jpeg" width="400"/>
 </p>
